@@ -51,3 +51,35 @@ export const signUp = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' })
   }
 }
+
+export const logIn = async (req, res) => {
+  const { email, password } = req.body
+
+  if(!email || !password) return res.status(400).json({ message: 'All fields are required' })
+
+  try {
+    const user = await User.findOne({ email })
+    
+    if(!user || user.email !== email) return res.status(400).json({ message: 'Invalid email or password' })
+
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+    if (!isPasswordValid) return res.status(400).json({ message: 'Invalid email or password' })
+
+    generateToken(user._id, res)
+    res.status(200).json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      profilePicture: user.profilePicture
+    })
+
+  } catch (error) {
+      console.log('Error in logIn: ', error)
+      res.status(500).json({ message: 'Internal server error' })
+  }
+}
+
+export const logOut = async (_, res) => {
+  res.cookie('jwt', '', {maxAge: 0})
+  res.status(200).json({ message: 'Logged out successfully' })
+}
