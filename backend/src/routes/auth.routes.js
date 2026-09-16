@@ -5,10 +5,6 @@ import { protectRoute }  from '../middleware/auth.middleware.js'
 
 const router = express.Router()
 
-router.get('/test', (req, res) => {
-    res.status(200).json({message: 'Test'})  
-})
-
 router.post("/signup", signUp)
 router.post("/login", logIn)
 router.post("/logout", logOut)
