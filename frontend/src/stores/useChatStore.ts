@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import axiosInstance from '../libs/axios';
-import type { AuthUser } from './authStore';
+import { useAuthStore, type AuthUser } from './authStore';
 
 type Message = {
   _id: string;
@@ -32,6 +32,8 @@ type Action = {
   fetchContactList: () => void;
   getMessagesByUserId: (id: string) => void;
   sendMessage: (payload: { message: string; image?: string | File }) => void;
+  subcribeMessageFromSocket: () => void;
+  unsubcribeMessageFromSocket: () => void;
 };
 
 export const useChatStore = create<State & Action>((set, get) => ({
@@ -100,5 +102,33 @@ export const useChatStore = create<State & Action>((set, get) => ({
     } catch (error) {
       console.log('Error sending message', error);
     }
+  },
+
+  subcribeMessageFromSocket: () => {
+    const { socket } = useAuthStore.getState();
+
+    if (!socket) return;
+    socket.off('newMessage');
+
+    socket.on('newMessage', (newMessage: Message) => {
+      console.log('🚀 ~ newMessage:', newMessage);
+      const { selectedPartner, isSoundEnabled } = get();
+
+      if (newMessage.senderId !== selectedPartner?._id) return;
+
+      if (isSoundEnabled) {
+        const notificationSound = new Audio('/sounds/notification.mp3');
+        notificationSound.currentTime = 0;
+        notificationSound.play().catch((err) => console.log(err));
+      }
+
+      set((state) => ({ messages: [...state.messages, newMessage] }));
+    });
+  },
+
+  unsubcribeMessageFromSocket: () => {
+    const { socket } = useAuthStore.getState();
+    if (!socket) return;
+    socket.off('newMessage');
   },
 }));

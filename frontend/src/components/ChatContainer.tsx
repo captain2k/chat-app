@@ -7,13 +7,30 @@ import ChatHeader from './ChatHeader';
 import MessageInput from './MessageInput';
 
 function ChatContainer() {
-  const { getMessagesByUserId, selectedPartner, messages, isLoadingMessage } = useChatStore();
+  const {
+    getMessagesByUserId,
+    selectedPartner,
+    messages,
+    isLoadingMessage,
+    subcribeMessageFromSocket,
+    unsubcribeMessageFromSocket,
+  } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
 
   useEffect(() => {
     getMessagesByUserId(selectedPartner._id);
-  }, [selectedPartner, getMessagesByUserId]);
+    subcribeMessageFromSocket();
+
+    return () => {
+      unsubcribeMessageFromSocket();
+    };
+  }, [
+    selectedPartner,
+    getMessagesByUserId,
+    unsubcribeMessageFromSocket,
+    subcribeMessageFromSocket,
+  ]);
 
   useEffect(() => {
     if (messageEndRef.current) {
@@ -44,10 +61,15 @@ function ChatContainer() {
                   )}
                   {msg.message && <p className="mt-2">{msg.message}</p>}
                   <p className="text-xs mt-1 opacity-75 flex items-center gap-1">
-                    {new Date(msg.createdAt).toLocaleTimeString(undefined, {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {msg.createdAt
+                      ? new Date(msg.createdAt).toLocaleTimeString(undefined, {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : new Date().toLocaleTimeString(undefined, {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                   </p>
                 </div>
               </div>
